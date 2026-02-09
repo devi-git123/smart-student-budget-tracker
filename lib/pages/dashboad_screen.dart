@@ -1,451 +1,427 @@
+import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 
-void main() => runApp(const StudentBudgetApp());
+import 'analytics_screen.dart';
+import 'financial_goals_screen.dart';
+import 'notifications_screen.dart';
+import 'profile_screen.dart';
+import 'settings_screen.dart';
+import 'smart_insights_screen.dart';
 
-class StudentBudgetApp extends StatelessWidget {
-  const StudentBudgetApp({super.key});
+/// ================= TRANSACTION MODEL =================
+class TransactionItem {
+  final String name;
+  final double amount;
+  final String type; // Income | Expense
+  final File? image;
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Inter',
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF2D6A7B),
-      ),
-      home: const StudentDashboard(),
-    );
-  }
+  TransactionItem({
+    required this.name,
+    required this.amount,
+    required this.type,
+    this.image,
+  });
 }
 
-// --- SCREEN 1: DASHBOARD ---
-class StudentDashboard extends StatelessWidget {
-  const StudentDashboard({super.key});
+/// ================= DASHBOARD =================
+class DashboardScreen extends StatefulWidget {
+  final Map<String, dynamic>? recentPayment;
 
+  const DashboardScreen({
+    super.key,
+    this.recentPayment,
+    required Map<dynamic, dynamic> payment,
+  });
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  int _currentIndex = 0;
+  String userName = "Navodya Devindi";
+
+  final List<TransactionItem> transactions = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.recentPayment != null) {
+      final p = widget.recentPayment!;
+      transactions.insert(
+        0,
+        TransactionItem(
+          name: p['name'],
+          amount: p['amount'],
+          type: p['type'] == 'income' ? 'Income' : 'Expense',
+        ),
+      );
+    }
+  }
+
+  double get totalExpense => transactions
+      .where((t) => t.type == 'Expense')
+      .fold(0, (s, t) => s + t.amount);
+
+  double get totalIncome => transactions
+      .where((t) => t.type == 'Income')
+      .fold(0, (s, t) => s + t.amount);
+
+  /// ================= UI =================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFB),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Hey, Alex!",
-                        style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                      ),
-                      const Text(
-                        "Student Budgeter",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2D6A7B),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const CircleAvatar(
-                    radius: 25,
-                    backgroundImage: NetworkImage(
-                      'https://i.pravatar.cc/150?u=student',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 25),
-
-              // Main Balance Card
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2D6A7B), Color(0xFF72C4D6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    // ignore: deprecated_member_use
-                    BoxShadow(
-                      color: Colors.blueGrey.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Total Monthly Allowance",
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      "LKR 45,000.00",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _balanceInfo("Spent", "LKR 12,400"),
-                        _balanceInfo("Remaining", "LKR 32,600"),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              const Text(
-                "Spending Categories",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 15),
-
-              SizedBox(
-                height: 100,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _categoryIcon(Icons.fastfood, "Food", Colors.orange),
-                    _categoryIcon(Icons.library_books, "Tuition", Colors.blue),
-                    _categoryIcon(Icons.directions_bus, "Travel", Colors.green),
-                    _categoryIcon(Icons.movie, "Fun", Colors.purple),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 25),
-              const Text(
-                "Recent Expenses",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-
-              _transactionItem(
-                "Cafeteria Lunch",
-                "Food",
-                "- LKR 450",
-                Icons.restaurant,
-                Colors.orange,
-              ),
-              _transactionItem(
-                "Monthly Bus Pass",
-                "Travel",
-                "- LKR 1,200",
-                Icons.directions_bus,
-                Colors.green,
-              ),
-              _transactionItem(
-                "Notebooks & Pens",
-                "Edu",
-                "- LKR 850",
-                Icons.edit,
-                Colors.blue,
-              ),
-            ],
-          ),
+      backgroundColor: const Color(0xFFF3F6F9),
+      drawer: _buildSidebar(),
+      appBar: _buildAppBar(),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _buildBalanceCard(),
+            const SizedBox(height: 16),
+            _buildQuickActions(),
+            const SizedBox(height: 16),
+            _buildCategoryPie(),
+            const SizedBox(height: 16),
+            _buildRecentTransactions(),
+          ],
         ),
       ),
-      bottomNavigationBar: _buildModernNav(context),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF2D6A7B),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  Widget _balanceInfo(String label, String amount) {
-    return Column(
+  /// ================= APP BAR =================
+  PreferredSizeWidget _buildAppBar() => AppBar(
+    backgroundColor: Colors.white,
+    elevation: 0,
+    iconTheme: const IconThemeData(color: Colors.black),
+    title: Text(
+      "Hi, $userName 👋",
+      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+    ),
+    actions: [
+      IconButton(
+        icon: const Icon(Icons.notifications),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+          );
+        },
+      ),
+    ],
+  );
+
+  /// ================= QUICK ACTIONS =================
+  Widget _buildQuickActions() => Row(
+    children: [
+      _actionCard(
+        icon: Icons.smart_toy,
+        color: Colors.purple,
+        title: "Smart Insights",
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SmartInsightsScreen()),
+          );
+        },
+      ),
+      const SizedBox(width: 12),
+      _actionCard(
+        icon: Icons.flag,
+        color: Colors.green,
+        title: "Financial Goals",
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const FinancialGoalsScreen()),
+          );
+        },
+      ),
+    ],
+  );
+
+  Widget _actionCard({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required VoidCallback onTap,
+  }) => Expanded(
+    child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8),
+          ],
+        ),
+        child: Column(
+          children: [
+            CircleAvatar(
+              backgroundColor: color.withOpacity(0.15),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(height: 10),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  /// ================= CARDS =================
+  Widget _buildBalanceCard() => _card(
+    Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text("Total Balance", style: TextStyle(color: Colors.grey)),
+        const SizedBox(height: 6),
         Text(
-          label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
+          "LKR ${(totalIncome - totalExpense).toStringAsFixed(2)}",
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
-        Text(
-          amount,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+      ],
+    ),
+  );
+
+  Widget _buildCategoryPie() => _card(
+    Row(
+      children: [
+        const Expanded(
+          child: Text(
+            "Income vs Expense",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+        SizedBox(
+          width: 90,
+          height: 90,
+          child: CustomPaint(
+            painter: CategoryPiePainter(
+              expense: totalExpense,
+              income: totalIncome,
+            ),
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
 
-  Widget _categoryIcon(IconData icon, String label, Color color) {
-    return Container(
-      width: 80,
-      margin: const EdgeInsets.only(right: 15),
-      // ignore: deprecated_member_use
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 5),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+  Widget _buildRecentTransactions() => _card(
+    Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Recent Transactions",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        if (transactions.isEmpty)
+          const Text(
+            "No transactions yet",
+            style: TextStyle(color: Colors.grey),
           ),
-        ],
-      ),
-    );
-  }
+        ...transactions.map(_transactionItem),
+      ],
+    ),
+  );
 
-  Widget _transactionItem(
-    String title,
-    String cat,
-    String price,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            // ignore: deprecated_member_use
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color),
+  Widget _transactionItem(TransactionItem tx) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      children: [
+        CircleAvatar(
+          backgroundColor: Colors.teal.withOpacity(0.1),
+          child: Icon(
+            tx.type == 'Expense' ? Icons.arrow_upward : Icons.arrow_downward,
+            color: tx.type == 'Expense' ? Colors.red : Colors.green,
           ),
-          const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Text(tx.name)),
+        Text(
+          "${tx.type == 'Expense' ? '-' : '+'} LKR ${tx.amount.toStringAsFixed(2)}",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: tx.type == 'Expense' ? Colors.red : Colors.green,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _card(Widget child) => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8),
+      ],
+    ),
+    child: child,
+  );
+
+  /// ================= BOTTOM NAV =================
+  Widget _buildBottomNav() => BottomNavigationBar(
+    currentIndex: _currentIndex,
+    onTap: (index) {
+      setState(() => _currentIndex = index);
+      if (index == 3) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+        );
+      }
+      if (index == 4) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+        );
+      }
+    },
+    type: BottomNavigationBarType.fixed,
+    selectedItemColor: Colors.teal,
+    items: const [
+      BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.repeat), label: ''),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.add_circle, size: 36),
+        label: '',
+      ),
+      BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: ''),
+      BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+    ],
+  );
+
+  /// ================= SIDEBAR =================
+  Widget _buildSidebar() => Drawer(
+    child: Column(
+      children: [
+        DrawerHeader(
+          decoration: const BoxDecoration(color: Colors.teal),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              const CircleAvatar(
+                radius: 32,
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, size: 36, color: Colors.teal),
+              ),
+              const SizedBox(height: 10),
               Text(
-                cat,
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                userName,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
               ),
             ],
           ),
-          const Spacer(),
-          Text(
-            price,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.redAccent,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModernNav(BuildContext context) {
-    return BottomAppBar(
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 8,
-      child: SizedBox(
-        height: 60,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            IconButton(
-              icon: const Icon(
-                Icons.dashboard_rounded,
-                color: Color(0xFF2D6A7B),
-              ),
-              onPressed: () {},
-            ),
-
-            // NAVIGATION TRIGGER BUTTON
-            IconButton(
-              icon: const Icon(Icons.bar_chart_rounded, color: Colors.grey),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const RecurringPaymentScreen(),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(width: 40),
-            IconButton(
-              icon: const Icon(
-                Icons.notifications_none_rounded,
-                color: Colors.grey,
-              ),
-              onPressed: () {},
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings_outlined, color: Colors.grey),
-              onPressed: () {},
-            ),
-          ],
         ),
-      ),
-    );
-  }
+        _drawerItem(
+          icon: Icons.person,
+          title: "Profile",
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ProfileScreen()),
+          ),
+        ),
+        _drawerItem(
+          icon: Icons.notifications,
+          title: "Notifications",
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+          ),
+        ),
+        _drawerItem(
+          icon: Icons.smart_toy,
+          title: "Smart Insights",
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SmartInsightsScreen()),
+          ),
+        ),
+        _drawerItem(
+          icon: Icons.flag,
+          title: "Financial Goals",
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const FinancialGoalsScreen()),
+          ),
+        ),
+        const Divider(),
+        _drawerItem(
+          icon: Icons.settings,
+          title: "Settings",
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SettingsScreen()),
+          ),
+        ),
+        const Spacer(),
+        _drawerItem(
+          icon: Icons.logout,
+          title: "Logout",
+          color: Colors.red,
+          onTap: () => Navigator.pop(context),
+        ),
+        const SizedBox(height: 12),
+      ],
+    ),
+  );
+
+  /// ================= DRAWER ITEM =================
+  Widget _drawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color color = Colors.black,
+  }) => ListTile(
+    leading: Icon(icon, color: color),
+    title: Text(title, style: TextStyle(color: color)),
+    onTap: onTap,
+  );
 }
 
-// --- SCREEN 2: RECURRING PAYMENTS ---
-class RecurringPaymentScreen extends StatelessWidget {
-  const RecurringPaymentScreen({super.key});
+/// ================= PIE PAINTER =================
+class CategoryPiePainter extends CustomPainter {
+  final double expense;
+  final double income;
+
+  CategoryPiePainter({required this.expense, required this.income});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          "Recurring payments",
-          style: TextStyle(color: Colors.grey, fontSize: 18),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            // Month Highlight Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFA6D34E), // Green color from wireframe
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "December",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                      Text(
-                        "Due in 3 days",
-                        style: TextStyle(color: Colors.white, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    "LKR 1500",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 30),
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    double total = expense + income;
+    double start = -pi / 2;
 
-            // Utility Grid
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 1.1,
-                children: [
-                  _utilityTile(Icons.water_drop, "Water", "LKR 2850"),
-                  _utilityTile(Icons.bolt, "Electricity", "LKR 3250"),
-                  _utilityTile(Icons.home, "Rent", "LKR 12500"),
-                  _utilityTile(Icons.wifi, "Internet", "LKR 1580"),
-                ],
-              ),
-            ),
+    if (total == 0) {
+      paint.color = Colors.grey.shade300;
+      canvas.drawArc(rect, 0, 2 * pi, true, paint);
+      return;
+    }
 
-            // Footer Button
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton(
-                onPressed: () {
-                  // This would link to the Utility Tracker form
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3BA7C8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-                child: const Text(
-                  "View utility tracker",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    paint.color = Colors.redAccent;
+    canvas.drawArc(rect, start, (expense / total) * 2 * pi, true, paint);
+
+    paint.color = Colors.green;
+    canvas.drawArc(
+      rect,
+      start + (expense / total) * 2 * pi,
+      (income / total) * 2 * pi,
+      true,
+      paint,
     );
   }
 
-  Widget _utilityTile(IconData icon, String title, String amount) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F1F1),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: Colors.green, size: 30),
-          const SizedBox(height: 10),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-          Text(
-            amount,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }
