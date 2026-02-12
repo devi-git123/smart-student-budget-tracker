@@ -1,7 +1,5 @@
-import 'package:budget_tracker/pages/dashboad_screen.dart';
 import 'package:flutter/material.dart';
-// Import your dashboard file here if it's in another file
-// import 'dashboard_screen.dart';
+import 'dashboad_screen.dart';
 
 class SelectCurrencyScreen extends StatefulWidget {
   const SelectCurrencyScreen({super.key});
@@ -35,20 +33,23 @@ class _SelectCurrencyScreenState extends State<SelectCurrencyScreen> {
             children: [
               const SizedBox(height: 50),
 
-              // Icon Section
+              // IMAGE SECTION
               Center(
                 child: Container(
                   width: 140,
                   height: 140,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    // ignore: deprecated_member_use
                     color: Colors.teal.withOpacity(0.1),
                   ),
-                  child: const Icon(
-                    Icons.account_balance_wallet_rounded,
-                    size: 70,
-                    color: Color(0xFF2D6A7B),
+                  child: Padding(
+                    padding: const EdgeInsets.all(30),
+                    child: Image.asset(
+                      "assets/Currency.png",
+                      width: 300,
+                      height: 300,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
@@ -74,7 +75,7 @@ class _SelectCurrencyScreenState extends State<SelectCurrencyScreen> {
 
               const SizedBox(height: 40),
 
-              // Dropdown Styling
+              // Dropdown
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -85,7 +86,6 @@ class _SelectCurrencyScreenState extends State<SelectCurrencyScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      // ignore: deprecated_member_use
                       color: Colors.black.withOpacity(0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
@@ -121,16 +121,16 @@ class _SelectCurrencyScreenState extends State<SelectCurrencyScreen> {
 
               const SizedBox(height: 60),
 
-              // Confirm Button with Navigation
+              // Confirm Button
               SizedBox(
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () {
-                    // 1. Navigation Logic
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const StudentDashboard(),
+                        builder: (context) =>
+                            const DashboardScreen(payment: {}),
                       ),
                     );
                   },
