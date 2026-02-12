@@ -42,12 +42,11 @@ class _SelectCurrencyScreenState extends State<SelectCurrencyScreen> {
                     shape: BoxShape.circle,
                     color: Colors.teal.withOpacity(0.1),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(30),
+                  child: ClipOval(
                     child: Image.asset(
                       "assets/Currency.png",
-                      width: 300,
-                      height: 300,
+                      width: 50,
+                      height: 50,
                       fit: BoxFit.contain,
                     ),
                   ),
